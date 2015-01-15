@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+             http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+	<context:annotation-config />
+
+	<context:property-placeholder location="classpath:META-INF/jdbc.properties" />
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+
+		<property name="mappingResources">
+			<list>
+				<value>META-INF/mappings/hbm/Operator.hbm.xml</value>
+			</list>
+		</property>
+
+		<property name="dataSource" ref="dataSource" />
+
+		<property name="hibernateProperties">
+			<value>
+				hibernate.dialect=org.hibernate.dialect.MySQLDialect
+				hibernate.show_sql=true
+				hibernate.format_sql=true
+				hibernate.cache.use_second_level_cache=true
+				hibernate.cache.use_query_cache=false
+				hibernate.cache.provider_class=org.hibernate.cache.EhCacheProvider
+				hibernate.current_session_context_class=org.springframework.orm.hibernate4.SpringSessionContext
+				hibernate.connection.release_mode=after_transaction
+			</value>
+		</property>
+	</bean>
+
+	<bean id="hibernateDaoSupport" class="com.stpass.dragon.hospital.HibernateDaoSupport">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+
+	<aop:config proxy-target-class="true">
+		<aop:pointcut id="aopService"
+			expression="execution(* com.stpass.dragon.hospital.service.*.*(..))" />
+		<aop:advisor pointcut-ref="aopService" advice-ref="txAdvice" />
+	</aop:config>
+
+	<bean id="OperatorDaoHibernateImpl"
+		class="com.stpass.dragon.hospital.dao.hibernate.OperatorDaoHibernate"></bean>
+	<bean id="OperatorService"
+		class="com.stpass.dragon.hospital.service.generic.OperatorServiceImpl">
+		<property name="operatorDao" ref="OperatorDaoHibernateImpl" />
+	</bean>
+</beans>
