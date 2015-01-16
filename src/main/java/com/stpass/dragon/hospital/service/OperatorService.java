@@ -36,8 +36,8 @@ public interface OperatorService {
 	public void removeOperator(int id);
 	/**
 	 * 操作者登陆验证
-	 * @param username
-	 * @param password
+	 * @param 用户名
+	 * @param 密码
 	 * @return
 	 */
 	public OperatorBean signIn(String username,String password);
